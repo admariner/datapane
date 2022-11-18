@@ -1,71 +1,73 @@
 site_name: Datapane Docs
 repo_name: datapane/datapane
-repo_url: https://github.com/datapane/datapane
+repo_url: https://github.com/datapane/datapane/
+edit_uri: "edit/master/docs/docs/"
 copyright: © 2022 <a href="https://datapane.com" target="_blank">Datapane</a>. All rights reserved.
 
 nav:
   - Introduction: "index.ipynb"
   - Quickstart: "quickstart.ipynb"
-
+  - Jupyter Integration: "jupyter-integration.ipynb"
+  - Release Notes: releasenotes.md
   - Tutorials:
-    - Getting started 🌱:
       - Install Datapane: "tutorials/basics/install-datapane.md"
-      - Create a report: "tutorials/basics/create-a-report.ipynb"
-    - Blocks types 🧱:
-      - tutorials/blocks/index.ipynb
-      - Tables and data: "tutorials/blocks/tables-and-data.ipynb"
-      - Plots and visualizations: "tutorials/blocks/plots-and-visualizations.ipynb"
-      - Text and HTML: "tutorials/blocks/text-code-and-html.ipynb"
-      - Layout and pages: "tutorials/blocks/layout-and-customization.ipynb"
-      - Media and embeds: "tutorials/blocks/media-attachments-and-embeds.ipynb"
-    - Datapane Cloud ☁️:
-      - tutorials/datapane-cloud/index.md
-      - Authentication: "tutorials/datapane-cloud/authenticate-datapane.ipynb"
-      - Upload a report: "tutorials/datapane-cloud/upload-a-report-to-datapane-cloud.ipynb"
-      - Report visibility: "tutorials/datapane-cloud/report-visibility.ipynb"
-      - Embedding: "tutorials/datapane-cloud/embedding.ipynb"
-      - Report notifications: "tutorials/datapane-cloud/report-notifications.ipynb"
-      - Files: "tutorials/datapane-cloud/files.md"
-    - Styling 🎨:
-      - tutorials/styling/index.ipynb
-      - Adding source code: "tutorials/styling/adding-source-code.ipynb"
-      - Global styling: "tutorials/styling/global-styling.md"
-    - Automation 🤖:
-      - tutorials/automation/index.md
-    - Apps 📦:
-      - tutorials/apps/index.ipynb
-      - Parameters and forms:
-        - "tutorials/apps/parameters-and-forms/index.ipynb"
-        - Configuration: "tutorials/apps/parameters-and-forms/configuration.md"
-        - Parameters: "tutorials/apps/parameters-and-forms/parameters.md"
-      - Scheduled report runs: "tutorials/apps/scheduling.md"
-      - Environments and variables: "tutorials/apps/variables.ipynb"
-      - Configuration and dependencies: "tutorials/apps/configuration-and-dependencies.md"
-      - Integrating databases or APIs: "tutorials/apps/database-and-network-access.md"
+      - Create an app: "tutorials/basics/create-an-app.ipynb"
+      - Add blocks to your app: "tutorials/blocks.ipynb"
+      - Datapane Cloud:
+          - tutorials/datapane-cloud/index.md
+          - Login to Cloud: "tutorials/datapane-cloud/authenticate-datapane.ipynb"
+          - Upload your app: "tutorials/datapane-cloud/upload-an-app-to-datapane-cloud.ipynb"
+          - Share your app: "tutorials/datapane-cloud/sharing.ipynb"
+          - Workspaces:
+              - "tutorials/datapane-cloud/workspaces/index.md"
+              - Workspace settings: "tutorials/datapane-cloud/workspaces/workspace-settings.md"
+              - Managing members: "tutorials/datapane-cloud/workspaces/managing-members.md"
+          - Projects: "tutorials/datapane-cloud/projects.md"
+      - Styling:
+          - Styling a single app: "tutorials/styling/index.ipynb"
+          - Global styling: "tutorials/styling/global-styling.md"
+      - Automation:
+          - tutorials/automation/index.md
 
-  - Guides:
-      - Adding interactive filters to plots: "guides/adding-interactive-filters-to-plots/adding-interactive-filters-to-plots.ipynb"
-      - Accessing data in Python: "guides/accessing-data-in-python/accessing-data-in-python.ipynb"
-
-  - Explanations:
-      # - Reports: "concepts/reports.ipynb"
-      # - Blocks: "concepts/blocks.ipynb"
-      # - Functions: ""
-      # - Datapane CLI: "concepts/datapane.md"
-      # - Datapane Cloud: "concepts/datapane-jl.ipynb"
-      - Datapane Teams:
-        - "concepts/datapane-teams/index.md"
-        - Deployment and hosting: "concepts/datapane-teams/deployment-and-hosting.md"
-        - Authentication and sharing: "concepts/datapane-teams/authentication-and-sharing.md"
-        - Managing users: "concepts/datapane-teams/managing-users.md"
-      - Support policy: "concepts/support-policy.md"
-
+  - Catalogs:
+      - Catalogs: "catalogs/index.ipynb"
+      - 🧱 Blocks:
+          - Blocks: "catalogs/blocks/index.ipynb"
+          - Tables and data:
+              - Big Number: "catalogs/blocks/bignumber.ipynb"
+              - Data Table: "catalogs/blocks/datatable.ipynb"
+              - Table: "catalogs/blocks/table.ipynb"
+          - Plots and visualizations:
+              - Plots: "catalogs/blocks/plot.ipynb"
+              - Maps: "catalogs/blocks/map.ipynb"
+          - Text and HTML:
+              - Text: "catalogs/blocks/text.ipynb"
+              - Code: "catalogs/blocks/code.ipynb"
+              - Formula: "catalogs/blocks/formula.ipynb"
+              - HTML: "catalogs/blocks/html.ipynb"
+          - Layout and pages:
+              - Groups: "catalogs/blocks/group.ipynb"
+              - Pages: "catalogs/blocks/page.ipynb"
+              - Selects: "catalogs/blocks/select.ipynb"
+          # - Divider: "catalogs/blocks/divider.ipynb"
+          # - Toggle: "catalogs/blocks/toggle.ipynb"
+          - Media and embeds:
+              - Attachments: "catalogs/blocks/attachment.ipynb"
+              - Embeds: "catalogs/blocks/embed.ipynb"
+              - Media: "catalogs/blocks/media.ipynb"
+      - 🗃 Components:
+          - Components: "catalogs/components/index.ipynb"
+          - Calendar heatmap: "catalogs/components/calendar-heatmap.ipynb"
+          - Timeline: "catalogs/components/timeline.ipynb"
+      - 📑 Templates:
+          - Templates: "catalogs/templates/index.ipynb"
   - Reference:
-    - API reference: "https://datapane.github.io/datapane/"
+      - API reference: "https://datapane.github.io/datapane/"
 
 theme:
   name: material
   logo: img/logo.png
+  custom_dir: overrides
   features:
     - navigation.sections
     - navigation.top
@@ -88,12 +90,14 @@ theme:
         icon: material/brightness-4
         name: Switch to light mode
   font:
-    text: Roboto
-    code: Roboto Mono
+    text: Inter
+    code: IBM Plex Mono
   favicon: img/favicon.png
 
 extra_css:
-  - stylesheets/extra.css
+  - css/extra.css
+extra_javascript:
+  - js/extra.js
 
 plugins:
   - mknotebooks:
@@ -109,12 +113,31 @@ plugins:
           - remove_input
   - search:
       lang: en
-  #- tags
-  # Currently a sponsor-only feature
-  # - social:
-  #     cards_color:
-  #       fill: "#131329"
-  #       text: "#F2F2FD"
+  - redirects:
+      redirect_maps:
+        "tutorials/basics/create-a-report.md": "tutorials/basics/create-an-app.ipynb"
+        "tutorials/datapane-cloud/upload-a-report-to-datapane-cloud.md": "tutorials/datapane-cloud/upload-an-app-to-datapane-cloud.ipynb"
+        "catalogues/index.md": "catalogs/index.ipynb"
+        "catalogues/blocks/index.md": "catalogs/blocks/index.ipynb"
+        "catalogues/blocks/bignumber.md": "catalogs/blocks/bignumber.ipynb"
+        "catalogues/blocks/datatable.md": "catalogs/blocks/datatable.ipynb"
+        "catalogues/blocks/table.md": "catalogs/blocks/table.ipynb"
+        "catalogues/blocks/plot.md": "catalogs/blocks/plot.ipynb"
+        "catalogues/blocks/map.md": "catalogs/blocks/map.ipynb"
+        "catalogues/blocks/text.md": "catalogs/blocks/text.ipynb"
+        "catalogues/blocks/code.md": "catalogs/blocks/code.ipynb"
+        "catalogues/blocks/formula.md": "catalogs/blocks/formula.ipynb"
+        "catalogues/blocks/html.md": "catalogs/blocks/html.ipynb"
+        "catalogues/blocks/group.md": "catalogs/blocks/group.ipynb"
+        "catalogues/blocks/page.md": "catalogs/blocks/page.ipynb"
+        "catalogues/blocks/select.md": "catalogs/blocks/select.ipynb"
+        "catalogues/blocks/attachment.md": "catalogs/blocks/attachment.ipynb"
+        "catalogues/blocks/embed.md": "catalogs/blocks/embed.ipynb"
+        "catalogues/blocks/media.md": "catalogs/blocks/media.ipynb"
+        "catalogues/components/index.md": "catalogs/components/index.ipynb"
+        "catalogues/components/calendar-heatmap.md": "catalogs/components/calendar-heatmap.ipynb"
+        "catalogues/components/timeline.md": "catalogs/components/timeline.ipynb"
+        "catalogues/templates/index.md": "catalogs/templates/index.ipynb"
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -139,6 +162,9 @@ markdown_extensions:
 
 extra:
   generator: false
+  analytics:
+    provider: posthog
+    api_key: phc_wxtD2Qxd3RMlmCCSYDC0rW1We22yh06cMcffnfSJTZy
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/datapane/datapane

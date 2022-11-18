@@ -17,7 +17,7 @@ from tabulate import tabulate
 
 from datapane import __rev__, __version__
 from datapane.common import DPError, SDict, _setup_dp_logging, dict_drop_empty, log
-from datapane.common.dp_types import add_help_text
+from datapane.common.dp_types import URL, add_help_text
 
 from . import analytics, api, apps
 from . import config as c
@@ -30,15 +30,10 @@ EXTRA_OUT: bool = False
 # TODO
 #  - add info subcommand
 #  - convert to use typer (https://github.com/tiangolo/typer) or autoclick
-def init(verbosity: int, config_env: str):
+def init(verbosity: int):
     """Init the cmd-line env"""
-    c.init(config_env=config_env)
+    c.init()
     _setup_dp_logging(verbosity=verbosity)
-
-    # config_f = c.load_from_envfile(config_env)
-    # _debug = debug if debug is not None else c.config.debug
-    # setup_logging(verbose_mode=_debug)
-    # log.debug(f"Loaded environment from {config_f}")
 
 
 @dc.dataclass(frozen=True)
@@ -48,7 +43,7 @@ class DPContext:
     easier to just use globals in general tho
     """
 
-    env: str
+    pass
 
 
 @contextmanager
@@ -104,15 +99,14 @@ def recursive_help(cmd, parent=None):  # noqa: ANN001
     count=True,
     help="Increase logging verbosity - can add multiple times",
 )
-@click.option("--env", default=c.DEFAULT_ENV, help="Alternate config environment to use.")
 @click.version_option(version=f"{__version__} ({__rev__})")
 @click.pass_context
-def cli(ctx: click.core.Context, verbose: int, env: str):
+def cli(ctx: click.core.Context, verbose: int):
     """Datapane CLI Tool"""
     global EXTRA_OUT
     EXTRA_OUT = verbose > 0
-    init(verbosity=verbose, config_env=env)
-    ctx.obj = DPContext(env=env)
+    init(verbosity=verbose)
+    ctx.obj = DPContext()
 
 
 # @cli.command()
@@ -128,7 +122,7 @@ def cli(ctx: click.core.Context, verbose: int, env: str):
 @click.pass_obj
 def login(obj: DPContext, token: str, server: str):
     """Login to a server with the given API token."""
-    api.login(token, server, env=obj.env)
+    api.login(token, server)
     # click.launch(f"{server}/settings/")
 
 
@@ -136,7 +130,7 @@ def login(obj: DPContext, token: str, server: str):
 @click.pass_obj
 def logout(obj: DPContext):
     """Logout from the server and reset the config file"""
-    api.logout(obj.env)
+    api.logout()
 
 
 @cli.command()
@@ -152,6 +146,17 @@ def ping():
 def hello_world():
     """Create and run an example report, and open in the browser"""
     api.hello_world()
+
+
+@cli.command()
+@click.argument("url", default=None)
+@click.option("--execute/--no-execute", default=True)
+def template(url: URL, execute: bool):
+    """Retrieve and run a template report, and open in the browser
+
+    URL is the location of the template repository. Relative locations can be used for first-party templates, e.g. `dp-template-classifier-dashboard`.
+    """
+    api.template(url, execute)
 
 
 ###############################################################################
@@ -279,7 +284,7 @@ def deploy(
             with tarfile.open(sdist) as tf:
                 for n in tf.getnames():
                     log.debug(f"  {n}")
-        r: api.App = api.App.upload_pkg(sdist, dp_cfg, overwrite)
+        r: api.LegacyApp = api.LegacyApp.upload_pkg(sdist, dp_cfg, overwrite)
         success_msg(f"Uploaded {click.format_filename(str(dp_cfg.script))} to {r.web_url}")
 
 
@@ -288,7 +293,7 @@ def deploy(
 @click.option("--project")
 def download(name: str, project: str):
     """Download app referenced by NAME to FILE"""
-    s = api.App.get(name, project=project)
+    s = api.LegacyApp.get(name, project=project)
     fn = s.download_pkg()
     success_msg(f"Downloaded {s.url} to {click.format_filename(str(fn))}")
 
@@ -298,14 +303,14 @@ def download(name: str, project: str):
 @click.option("--project")
 def delete(name: str, project: str):
     """Delete an app"""
-    api.App.get(name, project).delete()
+    api.LegacyApp.get(name, project).delete()
     success_msg(f"Deleted App {name}")
 
 
 @app.command("list")
 def app_list():
     """List Apps"""
-    print_table(api.App.list(), "Apps")
+    print_table(api.LegacyApp.list(), "Apps")
 
 
 @app.command()
@@ -326,7 +331,7 @@ def run(
     """Run a report"""
     params = process_cmd_param_vals(parameter)
     log.info(f"Running app with parameters {params}")
-    app = api.App.get(name, project=project)
+    app = api.LegacyApp.get(name, project=project)
     with api_error_handler("Error running app"):
         r = app.run(parameters=params, cache=cache)
     if wait:
@@ -437,7 +442,7 @@ def create(name: str, environment: Tuple[str], docker_image: str, project: str, 
     NAME: name of environment
     ENVIRONMENT: environment variables
     DOCKER IMAGE: docker image to be used inside apps
-    PROJECT: Project name (optional and only applicable for teams)
+    PROJECT: Project name (optional)
     """
     proccessed_environment = process_cmd_param_vals(environment)
     api.Environment.create(name, proccessed_environment, docker_image, project, overwrite)
@@ -496,7 +501,7 @@ def create(name: str, cron: str, parameter: Tuple[str], project: str):
     """
     params = process_cmd_param_vals(parameter)
     log.info(f"Adding schedule with parameters {params}")
-    app_obj = api.App.get(name, project=project)
+    app_obj = api.LegacyApp.get(name, project=project)
     schedule_obj = api.Schedule.create(app_obj, cron, params)
     success_msg(f"Created schedule: {schedule_obj.id} ({schedule_obj.url})")
 

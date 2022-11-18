@@ -15,21 +15,33 @@
         window.dpAuthorId = "{{author_id}}";
       {% endif %}
     </script>
-    <style>
-      {% include "local-report-base.css" %}
-    </style>
+    {% if standalone %}
+      <style>
+        {% include "local-report-base.css" %}
+      </style>
+    {% else %}
+      <link rel="stylesheet" href="{{ cdn_base }}/report/style.css">
+    {% endif %}
     <script>
       const report = { document: {{ report_doc|tojson }}, width: "{{ report_width }}", output_is_light_prose: {{ is_light_prose|tojson }} };
       const htmlHeader = `<style type="text/css">{{ css_header }}</style>`;
       window.reportProps = { report, htmlHeader };
-
     </script>
-    <script type="module">
-      {{ include_raw("local-report-base.js") }}
-    </script>
+    {% if standalone %}
+      <script type="module">
+        {{ include_raw("local-report-base.js") }}
+      </script>
+    {% else %}
+      <script type="module">
+        import { mountReport } from "{{ cdn_base }}/report/index.es.js";
+        mountReport(window.reportProps);
+      </script>
+    {% endif %}
   </head>
   <body>
-    <div id="report" class="w-full pb-12"></div>
+    <main class="{{ report_width_class }} w-full mx-auto">
+      <div id="report" class="w-full pb-12"></div>
+    </main>
     <div style="position: fixed; bottom: 0; width: 100%; z-index: 3;">
       <nav class="bg-gray-200 border-t border-gray-300">
         <div class="relative flex items-center justify-between h-12">

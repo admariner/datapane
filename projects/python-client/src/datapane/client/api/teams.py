@@ -6,8 +6,6 @@ Datapane Teams includes features to automate your Python workflows and easily bu
 Generally objects are created on the server via the static methods (rather than the constructor),
 and the instance methods and fields are used to access values (e.g. `.name`) and behaviour (e.g. `delete()`) on already existing object.
 Objects can be looked up by name using `.get()` and by id using `.by_id()`.
-
-..note:: The objects in this module are available on the Starter and Pro Teams Plans
 """
 from __future__ import annotations
 
@@ -22,7 +20,7 @@ from datapane import __version__
 from datapane.client.apps import DatapaneCfg
 from datapane.common import PKL_MIMETYPE, ArrowFormat, NPath, SDict, SList, SSDict
 from datapane.common.datafiles import DFFormatterCls, df_ext_map
-from datapane.common.utils import get_app_file_params
+from datapane.common.utils import dict_drop_empty, get_app_file_params
 
 from ..utils import DPError
 from .common import DPTmpFile, do_download_file
@@ -31,19 +29,19 @@ from .dp_object import DPObjectRef, save_df
 if t.TYPE_CHECKING:
     import pandas as pd
 
-__all__ = ["File", "Environment", "App", "Schedule"]
+__all__ = ["File", "Environment", "Schedule"]
 
 __pdoc__ = {
     "File.endpoint": False,
-    "App.endpoint": False,
+    "LegacyApp.endpoint": False,
     "Environment.endpoint": False,
     "Schedule.endpoint": False,
     # most app parameters we ignore
-    "App.call": False,
-    "App.upload_pkg": False,
-    "App.download_pkg": False,
-    "App.run": False,
-    "App.local_run": False,
+    "LegacyApp.call": False,
+    "LegacyApp.upload_pkg": False,
+    "LegacyApp.download_pkg": False,
+    "LegacyApp.run": False,
+    "LegacyApp.local_run": False,
 }
 
 
@@ -207,12 +205,18 @@ class Environment(DPObjectRef):
             An instance of the created `Environment` object
         """
         assert environment or docker_image, "environment or docker image must be set"
-        return cls.post(
-            name=name, environment=environment, docker_image=docker_image, project=project, overwrite=overwrite
+
+        opt_fields = dict_drop_empty(
+            none_only=True,
+            environment=environment,
+            docker_image=docker_image,
+            project=project,
         )
 
+        return cls.post(name=name, overwrite=overwrite, **opt_fields)
 
-class App(DPObjectRef):
+
+class LegacyApp(DPObjectRef):
     """
     Apps allow users to build, deploy, and automate data-driven Python workflows and apps
     to their cloud that can be customised and run by other users.
@@ -223,12 +227,12 @@ class App(DPObjectRef):
     endpoint: str = "/apps/"
 
     @classmethod
-    def upload_pkg(cls, sdist: Path, dp_cfg: DatapaneCfg, overwrite: bool = False, **kwargs) -> App:
+    def upload_pkg(cls, sdist: Path, dp_cfg: DatapaneCfg, overwrite: bool = False, **kwargs) -> LegacyApp:
         # TODO - use DPTmpFile
         # merge all the params for the API-call
-        kwargs["api_version"] = __version__
-        new_kwargs = {**dp_cfg.to_dict(), **kwargs}
-        return cls.post_with_files(file=sdist, overwrite=overwrite, **new_kwargs)
+        merged_args = {**dp_cfg.to_dict(), **kwargs}
+        opt_params = dict_drop_empty(none_only=True, api_version=__version__, **merged_args)
+        return cls.post_with_files(file=sdist, overwrite=overwrite, **opt_params)
 
     def download_pkg(self) -> Path:
         fn = do_download_file(self.data_url)
@@ -295,10 +299,11 @@ class Schedule(DPObjectRef):
     list_fields = ["id", "app", "cron", "parameter_vals"]
 
     @classmethod
-    def create(cls, app: App, cron: str, parameters: SDict) -> Schedule:
+    def create(cls, app: LegacyApp, cron: str, parameters: SDict) -> Schedule:
         return cls.post(app=app.url, cron=cron, parameter_vals=parameters)
 
     # NOTE - mypy doesn't like this method because the signature is different from super type
     # potentially we may need to change it
     def update(self, cron: str = None, parameters: SDict = None) -> None:  # type: ignore
-        super().update(cron=cron, parameter_vals=parameters)
+        opt_params = dict_drop_empty(cron=cron, parameter_vals=parameters)
+        super().update(**opt_params)

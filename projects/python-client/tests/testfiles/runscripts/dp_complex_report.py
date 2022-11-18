@@ -89,7 +89,7 @@ blocks = [
     mpl_asset,
 ]
 
-dp.Report(blocks=blocks).save(path="local_xml_report.html")
+dp.save_report(dp.App(blocks=blocks), path="local_xml_report.html")
 # add datatable
 blocks.append(df_datatable_asset)
-dp.Report(blocks=blocks).upload(name="xml_report", overwrite=True)
+dp.upload(dp.App(blocks=blocks), name="xml_report", overwrite=True)

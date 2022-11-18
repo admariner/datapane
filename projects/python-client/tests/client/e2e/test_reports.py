@@ -1,5 +1,4 @@
 import json
-import typing as t
 from copy import deepcopy
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -7,21 +6,37 @@ from pathlib import Path
 import pandas as pd
 import pytest
 import requests
-from glom import glom
 
 import datapane as dp
 from datapane.client import config as c
-from datapane.common import load_doc
 
-from ..local.api.test_reports import gen_report_complex_with_files, gen_report_simple
+from ..local.api.test_reports import gen_legacy_report_simple, gen_report_complex_with_files, gen_report_simple
 from .common import check_name, deletable, gen_description, gen_df, gen_name, gen_plot
 
 pytestmark = pytest.mark.usefixtures("dp_login")
 
 
+def test_legacy_report_with_single_file(datadir: Path):
+    """Ensure deprecated Report.save and Report.upload work as expected"""
+    report = gen_report_complex_with_files(datadir, single_file=True, local_report=True)
+    # Test we can save then upload
+    report.save(str(datadir / "test_report.html"))
+    report.upload(name=gen_name(), description="DESCRIPTION")
+    with deletable(report):
+        pass
+
+
+def test_legacy_report_simple():
+    """Ensure deprecated dp.Report works as expected"""
+    report = gen_legacy_report_simple()
+    report.upload(name=gen_name(), description="DESCRIPTION", project="default")
+    with deletable(report):
+        pass
+
+
 def test_report_simple():
     report = gen_report_simple()
-    report.upload(name=gen_name(), description="DESCRIPTION")
+    dp.upload(report, name=gen_name(), description="DESCRIPTION", project="default")
     with deletable(report):
         pass
 
@@ -44,92 +59,87 @@ def test_report_update_metadata():
         "num_blocks",
     )
 
-    report.upload(name, **props)
-
-    def check(x, y):
-        if isinstance(x, list) and isinstance(y, list):
-            assert sorted(x) == sorted(y)
-        else:
-            assert x == y
+    dp.upload(report, name, **props)
 
     with deletable(report):
-        for (k, v) in props.items():
-            check(report.dto[k], v)
+
+        def check_props():
+            assert report.dto["description"] == props["description"]
+            assert report.dto["source_url"] == props["source_url"]
+            assert sorted(report.dto["tags"]) == sorted(props["tags"])
+            assert report.dto["publicly_visible"] == props.get("publicly_visible", False)
+
+        check_props()
         orig_dto = deepcopy(report.dto)
 
         # overwrite and upload again, using defaults
-        report.upload(name, overwrite=True)
-        # check props haven't changed
-        for (k, v) in props.items():
-            check(report.dto[k], v)
+        dp.upload(report, name, overwrite=True)
+
+        # check specified props haven't changed
+        check_props()
 
         # check other elements haven't changed?
         for x in same_props:
-            check(report.dto[x], orig_dto[x])
+            assert report.dto[x] == orig_dto[x]
+
+
+def test_report_visibility():
+    report = gen_report_simple()
+    name = gen_name()
+
+    dp.upload(report, name)
+
+    with deletable(report):
+
+        def assert_visibility(visible: bool):
+            assert report.dto["publicly_visible"] is visible
+
+        # check initial report with no specified visibility defaults to `False`
+        assert_visibility(False)
+
+        # overwrite and upload again, setting public visibility
+        dp.upload(report, name, overwrite=True, publicly_visible=True)
+
+        # check updated report is publicly visible
+        assert_visibility(True)
+
+        # overwrite and upload, leaving visibility unspecified
+        dp.upload(report, name, overwrite=True)
+
+        # check visibility is unchanged
+        assert_visibility(True)
 
 
 def test_report_with_single_file(datadir: Path):
     report = gen_report_complex_with_files(datadir, single_file=True, local_report=True)
-    # Test we can save then upload
-    report.save(str(datadir / "test_report.html"))
-    report.upload(name=gen_name(), description="DESCRIPTION")
+    # Test we can save, build then upload
+    dp.save_report(report, str(datadir / "test_report.html"))
+    dp.build(report, name="test_report", dest=datadir)
+    dp.upload(report, name=gen_name(), description="DESCRIPTION")
     with deletable(report):
         pass
 
 
 def test_report_with_files(datadir: Path):
     report = gen_report_complex_with_files(datadir)
-    report.upload(name=gen_name(), description="DESCRIPTION")
+    dp.upload(report, name=gen_name(), description="DESCRIPTION")
     with deletable(report):
         pass
 
 
 def test_report_update_with_files(datadir: Path):
     report = gen_report_complex_with_files(datadir)
-    report.upload(name=gen_name(), description="DESCRIPTION")
+    dp.upload(report, name=gen_name(), description="DESCRIPTION")
     with deletable(report):
         doc_a = report.document
-        report.upload(name=gen_name(), description="DESCRIPTION")
+        dp.upload(report, name=gen_name(), description="DESCRIPTION")
         doc_b = report.document
         assert doc_a == doc_b
 
 
-def test_report_update_assets(datadir: Path):
-    report = dp.Report(
-        dp.DataTable(gen_df(2501), name="df-block"), dp.DataTable(gen_df(2502)), dp.Empty(name="block1")  # unnamed
-    )
-    report.upload(name=gen_name(), description="DESCRIPTION")
-
-    def check_block_name(report, tag: str, rf_names: t.List[str]):
-        x = load_doc(report.document)
-        es = x.xpath("//*[@name='block1']")
-        assert es[0].tag == tag
-        assert len(es) == 1
-        assert x.xpath("count(/Report/Pages//*)") == 4
-        # ordering or report_files is non-deterministic
-        assert sorted(glom(report.report_files, ["name"])) == sorted(rf_names)
-
-    with deletable(report):
-        # add a df
-        report.update_assets(block1=gen_df(2503))
-        check_block_name(report, "DataTable", ["df-block", "", "block1"])
-        # add a plot
-        report.update_assets(block1=gen_plot())
-        doc_b = report.document
-        check_block_name(report, "Plot", ["df-block", "", "block1"])
-
-        # add additional blocks
-        # note - gen_plot is deterministic, hence is adding a new copy of same asset in CAS to asset-store only
-        report.update_assets(block2=gen_plot())
-        assert doc_b == report.document
-        check_block_name(report, "Plot", ["block2", "df-block", "", "block1"])
-
-        # ['df-block', '', 'block1', 'block2']
-
-
 def test_demo_report():
     report = dp.builtins.build_demo_report()
-    report.upload(name=gen_name(), description="DESCRIPTION")
+    dp.upload(report, name=gen_name(), description="DESCRIPTION")
     with deletable(report):
         pass
 
@@ -158,8 +168,8 @@ def test_full_report(tmp_path: Path, shared_datadir: Path, monkeypatch):
     df_asset = dp.DataTable(df=df, caption="Our Dataframe")
     divider = dp.Divider()
     empty_block = dp.Empty(name="empty-block")
-    dp_report = dp.Report(m, file_asset, df_asset, plot_asset, list_asset, divider, empty_block, media_asset)
-    dp_report.upload(name=name, description=description, source_url=source_url)
+    dp_report = dp.App(m, file_asset, df_asset, plot_asset, list_asset, divider, empty_block, media_asset)
+    dp.upload(dp_report, name=name, description=description, source_url=source_url)
 
     with deletable(dp_report):
         # are the fields ok
@@ -243,8 +253,8 @@ def test_complex_df_report():
     df_desc_t = dp.DataTable(df_desc)
     df_desc_2_t = dp.DataTable(df_desc_2)
 
-    with deletable(dp.Report(tz_t, index_t, df_desc_t, df_desc_2_t)) as dp_report:
-        dp_report.upload(name=gen_name())
+    with deletable(dp.App(tz_t, index_t, df_desc_t, df_desc_2_t)) as dp_report:
+        dp.upload(dp_report, name=gen_name())
 
         # NOTE - as above, downloading embedded assets from a report currently not supported in API
         # check_df_equal(tz_df, tz_t.download_df())
@@ -253,18 +263,24 @@ def test_complex_df_report():
         # check_df_equal(df_desc_2, df_desc_2_t.download_df())
 
 
-@pytest.mark.org
 def test_report_project():
+    # TODO - add additional checks like uploading to a report the user isn't a member of
+    # i.e. both in the same team, or another project in a diff team
     # update a report that will automatically be added to the default project
     report = gen_report_simple()
-    report.upload(name="test_report_project")
+    dp.upload(report, name="test_report_project")
     # check if the project name is default
+    with deletable(report):
+        assert report.project == "default"
+
+    # explicitly add to the project
+    dp.upload(report, name="test_report_project_2", project="default")
     with deletable(report):
         assert report.project == "default"
 
     # test adding report to a group that doesn't exist
     report2 = gen_report_simple()
-    try:
-        report2.upload(name="test_wrong_project", project="wrong-project")
-    except requests.HTTPError as e:
+
+    with pytest.raises(requests.HTTPError) as e:
+        dp.upload(report2, name="test_wrong_project", project="wrong-project")
         assert e.response.status_code == 400

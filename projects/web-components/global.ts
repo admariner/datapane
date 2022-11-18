@@ -1,6 +1,7 @@
 declare global {
     interface Window {
         dpLocal: boolean;
+        dpServed: boolean;
         reportProps?: any;
         posthog: any;
         hasPosthog: any;
@@ -9,6 +10,7 @@ declare global {
         dpLocalViewEvent: any;
         Alpine: any;
         $testResources: any;
+        errorHandler: any;
     }
 }
 

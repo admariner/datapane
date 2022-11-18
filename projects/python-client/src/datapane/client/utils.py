@@ -1,4 +1,5 @@
 import argparse
+import os
 import string
 import sys
 import typing as t
@@ -68,6 +69,20 @@ def is_jupyter() -> bool:
         return False
 
 
+def get_environment_type() -> str:
+    """Try and get the name of the IDE the script is running in"""
+    if "PYCHARM_HOSTED" in os.environ:
+        return "pycharm"
+    if "google.colab" in sys.modules:
+        return "colab"
+    elif "VSCODE_PID" in os.environ:
+        return "vscode"
+    elif is_jupyter():
+        return "jupyter"
+
+    return "unknown"
+
+
 class MarkdownFormatter(string.Formatter):
     """Support {:l} and {:cmd} format fields"""
 
@@ -133,8 +148,12 @@ def process_cmd_param_vals(params: Tuple[str, ...]) -> JDict:
 
 
 def parse_command_line() -> t.Dict[str, t.Any]:
-    """Called in library mode to pull any parameters into dp.Config"""
-    parser = argparse.ArgumentParser(description="Datapane additional args", conflict_handler="resolve", add_help=False)
+    """Called in library mode to read any datapane CLI parameters"""
+    parser = argparse.ArgumentParser(
+        description="Datapane additional args",
+        conflict_handler="resolve",
+        add_help=False,
+    )
     parser.add_argument(
         "--parameter",
         "-p",

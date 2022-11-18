@@ -2,7 +2,7 @@
 
 Runtime API used when running a Datapane App
 
-..note:: The objects in this module are available on Datapane Teams
+..note:: The objects in this module are available on Datapane Enterprise
 """
 import dataclasses as dc
 import os
@@ -15,7 +15,7 @@ from datapane.client.apps import DATAPANE_YAML, DatapaneCfg
 from datapane.common import NPath, SDict, log
 
 if t.TYPE_CHECKING:
-    from .report.core import Report
+    from .report.core import App
 
 ###############################################################################
 # top level functions here - move to runner?
@@ -29,7 +29,7 @@ __all__ = []  # type: ignore
 # NOTE - is this materially different to ON_DATAPANE?
 by_datapane: bool = ON_DATAPANE or "DATAPANE_BY_DATAPANE" in os.environ
 
-_report: t.Deque["Report"] = deque(maxlen=1)
+_report: t.Deque["App"] = deque(maxlen=1)
 
 
 class _Params(dict):

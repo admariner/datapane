@@ -124,7 +124,7 @@ def _process_res(r: Response, empty_ok: bool = False) -> t.Union[Munch, JSON]:
         if r.status_code == 426:
             check_pip_version()
         elif r.status_code == 401:
-            failure_msg(f"Couldn't successfully connect to {c.config.server}, please check your login details")
+            failure_msg(f"Couldn't successfully connect to {furl(r.url).origin}, please check your login details")
         else:
             try:
                 log.error(pprint.pformat(r.json()))
@@ -165,7 +165,7 @@ class Resource:
 
     def _check_endpoint(self, url: str):
         # raise exception if unavailable object is being accessed on the basic instance
-        basic_endpoints = ["files", "oembed", "reports", "settings", "users", "api-signup-tokens"]
+        basic_endpoints = ["files", "oembed", "reports", "settings", "users", "api-login-tokens"]
         parsed_url: furl = furl(url)
         url_parts = parsed_url.path.segments
         if (
@@ -173,9 +173,10 @@ class Resource:
             and url_parts[0] == "api"
             and url_parts[1] not in basic_endpoints
         ):
-            raise UnsupportedResourceError(f"{url_parts[1].title()} are part of Datapane Teams.")
+            raise UnsupportedResourceError(f"{url_parts[1].title()} are part of Datapane Enterprise.")
 
     def post(self, params: t.Dict = None, overwrite: bool = False, **data: JSON) -> JSON:
+        # do we ever want to support queryparams via POST?
         params = params or dict()
         extra_headers = {"Datapane-Object-Overwrite": "True"} if overwrite else {}
         r = self.session.post(self.url, headers=extra_headers, json=data, params=params, timeout=self.timeout)

@@ -1,8 +1,9 @@
-/* global process:true */
 /* eslint no-undef: "error" */
 
 const getHostName = (): string | null => {
-    return window.dpLocal ? null : window.location.origin.concat("/");
+    return window.dpLocal || window.dpServed
+        ? null
+        : window.location.origin.concat("/");
 };
 
 const env: any = {};

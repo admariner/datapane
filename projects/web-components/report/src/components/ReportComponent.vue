@@ -14,13 +14,13 @@ import {
     trackReportView,
 } from "../../../shared/dp-track";
 import { ReportProps } from "../data-model/types";
+import sanitizeHtml from "sanitize-html";
 
 // Vue can't use a ts interface as props
 // see https://github.com/vuejs/core/issues/4294
 const p = defineProps<{
     isOrg: ReportProps["isOrg"];
     mode: ReportProps["mode"];
-    disableTrackViews?: ReportProps["disableTrackViews"];
     htmlHeader?: ReportProps["htmlHeader"];
     report: ReportProps["report"];
 }>();
@@ -29,12 +29,11 @@ const pageNumber = ref(0);
 
 onMounted(() => {
     /* View tracking */
-    if (window.dpLocal && window.dpLocalViewEvent) {
-        trackLocalReportView();
+    if (window.dpLocal) {
+        trackLocalReportView("CLI_REPORT_VIEW");
+    } else if (window.dpServed) {
+        trackLocalReportView("SERVED_REPORT_VIEW");
     } else {
-        if (p.disableTrackViews) {
-            return;
-        }
         const { web_url, id, published, username, num_blocks } = p.report;
         trackReportView({
             id: id,
@@ -58,8 +57,19 @@ const rootGroup: ComputedRef<LayoutBlock> = computed(
     () => report.children[pageNumber.value].children[0]
 );
 
-// HTML header is taken from the report object, unless overwritten via props
-const htmlHeader = p.htmlHeader || p.report.output_style_header;
+const htmlHeader = computed(() => {
+    // HTML header is taken from the report object, unless overwritten via props
+    const dirtyHeader = p.htmlHeader || p.report.output_style_header;
+    return p.isOrg
+        ? dirtyHeader
+        : sanitizeHtml(dirtyHeader, {
+              allowedTags: ["style"],
+              allowedAttributes: {
+                  style: [],
+              },
+              allowVulnerableTags: true, // Suppress warning for allowing `style`
+          });
+});
 
 const htmlHeaderRef = (node: any) => {
     /**

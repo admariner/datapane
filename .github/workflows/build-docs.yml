@@ -5,9 +5,11 @@ on:
   push:
     branches: [ master ]
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
 
 jobs:
   build:
+    if: github.event.pull_request.draft == false
     defaults:
       run:
         shell: bash
@@ -34,7 +36,7 @@ jobs:
 
       - name: Install Tools
         run: |
-          pipx install -f "poetry>=1.1.14,<1.2.0"
+          pipx install -f 'poetry~=1.2.0'
           poetry config virtualenvs.in-project true
           # use /home/runner to workaround 'act' running as root for local development (HOME not available)
           sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /home/runner/.local/bin
@@ -46,15 +48,14 @@ jobs:
           echo "${RUNNER_CONTEXT}"
           which python
 
+      - name: Build (+ Link) Local Report bundle
+        run: |
+          task web-components:install:ci web-components:build:local-report web-components:build:report link-local-report
 
       - name: Install Docs Dependencies
         run: |
           pushd docs; poetry env use 3.10; popd
           task docs:install
-
-      - name: Build (+ Link) Local Report bundle
-        run: |
-          task web-components:install:ci web-components:build:local-report link-local-report
 
       - name: Login to Datapane
         working-directory: docs
@@ -62,6 +63,8 @@ jobs:
           # We're only pushing to the server as a side-effect, we never actually use what we push.
           # TODO: Implement environment variables to avoid writing the token to disk.
           poetry run datapane login --token '${{ secrets.DOCS_BUILD_DATAPANE_API_KEY }}'
+          # disable analytics within the docs, we know what's in here
+          mkdir -p ~/.config/datapane && touch ~/.config/datapane/no_analytics
 
       - name: Build
         run: |

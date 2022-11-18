@@ -3,12 +3,12 @@ import platform
 from contextlib import suppress
 from functools import wraps
 from pathlib import Path
-from typing import Optional
+from typing import Any, Callable, Optional, TypeVar, cast
 
 import posthog
 
 from datapane import _IN_DPSERVER, _IN_PYTEST, _USING_CONDA, ON_DATAPANE, __version__, log
-from datapane.client.utils import is_jupyter
+from datapane.client.utils import get_environment_type, is_jupyter
 
 from . import config as c
 
@@ -41,7 +41,13 @@ def capture(event: str, config: Optional[c.Config] = None, **properties) -> None
         identify(config)
         config.save()
 
-    properties.update(source="cli", dp_version=__version__, in_jupyter=is_jupyter(), using_conda=_USING_CONDA)
+    properties.update(
+        source="cli",
+        dp_version=__version__,
+        environment_type=get_environment_type(),
+        in_jupyter=is_jupyter(),
+        using_conda=_USING_CONDA,
+    )
 
     with suppress(Exception):
         posthog.capture(config.session_id, event, properties)
@@ -52,6 +58,7 @@ def identify(config: c.Config, **properties) -> None:
         os=platform.system(),
         python_version=platform.python_version(),
         dp_version=__version__,
+        environment_type=get_environment_type(),
         in_jupyter=is_jupyter(),
         using_conda=_USING_CONDA,
     )
@@ -67,17 +74,21 @@ def identify(config: c.Config, **properties) -> None:
 #         return None
 #     identify(config.session_id)
 
+# From the mypy docs ...https://mypy.readthedocs.io/en/stable/generics.html#declaring-decorators
+F = TypeVar("F", bound=Callable[..., Any])
 
-def capture_event(name: str):
-    # Decorator used for capturing events without any properties
-    def decorator(f):
-        @wraps(f)
-        def wrapper(*args, **kwargs):
+
+def capture_event(name: str) -> Callable[[F], F]:
+    """Decorator to capture 'name' as analytics event when the function is called"""
+
+    def _decorator(func: F) -> F:
+        @wraps(func)
+        def _wrapper(*args, **kwargs):
             try:
-                return f(*args, **kwargs)
+                return func(*args, **kwargs)
             finally:
                 capture(name)
 
-        return wrapper
+        return cast(F, _wrapper)
 
-    return decorator
+    return _decorator

@@ -1,6 +1,6 @@
 """# API docs for Datapane Client
 
-These docs describe the Python API for building Datapane documents, along with additional information on the Datapane Teams API.
+These docs describe the Python API for building Datapane documents.
 
 Usage docs for Datapane can be found at https://docs.datapane.com
 
@@ -8,9 +8,9 @@ These objects are all available under the `datapane` module, via `import datapan
 
 ### Datapane Reports API
 
-The core document APIs are available for both Datapane Community and Datapane Teams, these are found in `datapane.client.api.report`, including,
+The core document APIs, these are found in `datapane.client.api.report`, including,
 
-  - `datapane.client.api.report.core.Report`
+  - `datapane.client.api.report.core.App`
   - Layout Blocks
     - `datapane.client.api.report.blocks.Page`
     - `datapane.client.api.report.blocks.Group`
@@ -26,13 +26,13 @@ The core document APIs are available for both Datapane Community and Datapane Te
     - `datapane.client.api.report.blocks.Code`
     - `datapane.client.api.report.blocks.HTML`
 
-### Datapane Teams
+### Datapane Enterprise (beta)
 
 Additional API docs are found in `datapane.client.api.teams` that provide building, deployment, and sharing of data analytics apps and workflows
 
   - `datapane.client.api.teams.File`
   - `datapane.client.api.teams.Environment`
-  - `datapane.client.api.teams.App`
+  - `datapane.client.api.teams.LegacyApp`
   - `datapane.client.api.teams.Schedule`
 
 
@@ -49,6 +49,7 @@ import warnings
 from ..utils import IncompatibleVersionError
 from .common import HTTPError, Resource
 from .dp_object import DPObjectRef
+from .ipython_utils import cells_to_blocks
 from .report.blocks import (
     HTML,
     Attachment,
@@ -69,10 +70,21 @@ from .report.blocks import (
     Text,
     Toggle,
 )
-from .report.core import FontChoice, PageLayout, Report, ReportFormatting, ReportWidth, TextAlignment
+from .report.core import (
+    App,
+    AppFormatting,
+    AppWidth,
+    FontChoice,
+    PageLayout,
+    Report,
+    ReportFormatting,
+    ReportWidth,
+    TextAlignment,
+)
+from .report.processors import Processor, build, save_report, serve, upload
 from .runtime import Params, Result, _report, _reset_runtime, by_datapane
-from .teams import App, Environment, File, Run, Schedule
-from .user import hello_world, login, logout, ping
+from .teams import Environment, File, LegacyApp, Run, Schedule
+from .user import hello_world, login, logout, ping, template
 
 from ..config import init  # isort:skip  otherwise circular import issue
 from . import builtins  # isort:skip
@@ -80,6 +92,9 @@ from . import builtins  # isort:skip
 __all__ = [
     "warnings",
     "init",
+    "App",
+    "AppFormatting",
+    "AppWidth",
     "IncompatibleVersionError",
     "builtins",
     "HTTPError",
@@ -95,9 +110,11 @@ __all__ = [
     "Empty",
     "Formula",
     "Group",
+    "LegacyApp",
     "Media",
     "Page",
     "Plot",
+    "Report",
     "Select",
     "SelectType",
     "Table",
@@ -105,7 +122,7 @@ __all__ = [
     "Toggle",
     "FontChoice",
     "PageLayout",
-    "Report",
+    "Processor",
     "ReportFormatting",
     "ReportWidth",
     "TextAlignment",
@@ -123,4 +140,10 @@ __all__ = [
     "login",
     "logout",
     "ping",
+    "template",
+    "upload",
+    "save_report",
+    "serve",
+    "build",
+    "cells_to_blocks",
 ]

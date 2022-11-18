@@ -10,7 +10,7 @@ except ImportError:
     # NOTE - could use subprocess to get from git?
     __rev__ = "local"
 
-__version__ = "0.14.0"
+__version__ = "0.15.4"
 
 _TEST_ENV = bool(os.environ.get("DP_TEST_ENV", ""))
 _IN_PYTEST = "pytest" in sys.modules
@@ -27,6 +27,8 @@ from .common.utils import _setup_dp_logging, enable_logging, log  # isort:skip  
 from .client.api import (
     HTML,
     App,
+    AppFormatting,
+    AppWidth,
     Attachment,
     BigNumber,
     Code,
@@ -39,11 +41,13 @@ from .client.api import (
     FontChoice,
     Formula,
     Group,
+    LegacyApp,
     Media,
     Page,
     PageLayout,
     Params,
     Plot,
+    Processor,
     Report,
     ReportFormatting,
     ReportWidth,
@@ -56,19 +60,27 @@ from .client.api import (
     Text,
     TextAlignment,
     Toggle,
+    build,
     builtins,
     by_datapane,
+    cells_to_blocks,
     hello_world,
     login,
     logout,
     ping,
+    save_report,
+    serve,
+    template,
+    upload,
 )
 from .client.config import init
 from .common.dp_types import DPMode, get_dp_mode, set_dp_mode
 
 __all__ = [
-    "HTML",
     "App",
+    "AppFormatting",
+    "AppWidth",
+    "HTML",
     "Attachment",
     "BigNumber",
     "Code",
@@ -81,11 +93,13 @@ __all__ = [
     "FontChoice",
     "Formula",
     "Group",
+    "LegacyApp",
     "Media",
     "Page",
     "PageLayout",
     "Params",
     "Plot",
+    "Processor",
     "Report",
     "ReportFormatting",
     "ReportWidth",
@@ -104,9 +118,16 @@ __all__ = [
     "login",
     "logout",
     "ping",
+    "template",
     "_setup_dp_logging",
     "enable_logging",
     "log",
+    "load_params_from_command_line",
+    "upload",
+    "save_report",
+    "serve",
+    "build",
+    "cells_to_blocks",
 ]
 
 
@@ -122,9 +143,12 @@ else:
 
 # TODO - do we want to init only in jupyter / interactive / etc.
 # only init fully in library-mode, as framework and app init explicitly
-if get_dp_mode() == DPMode.LIBRARY:
+if get_dp_mode() == DPMode.LIBRARY and not _IN_PYTEST:
     init()
-    # parse any commandline params
+
+
+def load_params_from_command_line() -> None:
+    """Call this from your own scripts to read any CLI parameters into the global Params object"""
     from .client.utils import parse_command_line
 
     config = parse_command_line()

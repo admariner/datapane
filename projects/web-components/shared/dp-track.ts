@@ -15,7 +15,7 @@ type ReportViewPayload = {
 const API_HOST = "https://events.datapane.com";
 // NOTE - this will use prod as the url for local reports
 const KPIS_ENDPOINT = urljoin(
-    environment.url ?? "https://datapane.com/",
+    environment.url ?? "https://cloud.datapane.com/",
     "dp-kpis/"
 );
 //const KPIS_ENDPOINT = "http://localhost:8090/dp-kpis/";
@@ -44,8 +44,6 @@ export const setupPostHog = async (
                 userId && (await identifyUser(posthog, userId));
                 await mutex.release(LOCK_NAME);
             },
-            persistence: "localStorage",
-            persistence_name: "datapane_store",
         });
     } catch (e) {
         console.error("Posthog setup error", e);
@@ -135,9 +133,14 @@ export const trackReportView = (properties: ReportViewPayload) => {
     asyncPosthogCapture("Report View", properties);
 };
 
-export const trackLocalReportView = () => {
+export const trackLocalReportView = (
+    event: "CLI_REPORT_VIEW" | "SERVED_REPORT_VIEW"
+) => {
+    if (!window.dpLocalViewEvent) {
+        return;
+    }
     asyncDPTrackEvent(
-        "CLI_REPORT_VIEW",
+        event,
         {
             author_id: window.dpAuthorId,
             report_id: window.dpReportId,
